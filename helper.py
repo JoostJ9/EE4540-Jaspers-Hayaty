@@ -1,3 +1,7 @@
+"""
+This helper module provides different functions used in EE4540.ipynb.
+"""
+
 import numpy as np
 from matplotlib import pyplot as plt
 
@@ -73,5 +77,6 @@ def min_radius_for_sensors(num_sensors, dimension, size=1):
     """
     unit_cube_radius = np.power(2 * np.log(num_sensors) / num_sensors, 1 / dimension)
     required_radius = unit_cube_radius * size
-    print(f"Minimum required radius for connectivity with high probability (n={num_sensors}, area={size}x{size}): {required_radius:.2f} m")
+    probability_of_connectivity = (1 - 1 / num_sensors**2) * 100  # Simplified probability of connectivity
+    print(f"Minimum required radius for connectivity with probability: {probability_of_connectivity} (n={num_sensors}, area={size}x{size}): {required_radius:.2f} m")
     return required_radius
