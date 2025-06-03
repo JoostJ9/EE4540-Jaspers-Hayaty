@@ -1,3 +1,7 @@
+"""
+This helper module provides different functions used in EE4540.ipynb.
+"""
+
 import numpy as np
 from matplotlib import pyplot as plt
 
