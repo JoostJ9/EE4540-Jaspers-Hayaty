@@ -4,6 +4,7 @@ This helper module provides different functions used in EE4540.ipynb.
 
 import numpy as np
 from matplotlib import pyplot as plt
+import cvxpy as cp
 
 def generate_random_geometric_graph(num_sensor, radius, AREA_WIDTH):
     """
@@ -80,3 +81,43 @@ def min_radius_for_sensors(num_sensors, dimension, size=1):
     probability_of_connectivity = (1 - 1 / num_sensors**2) * 100  # Simplified probability of connectivity
     print(f"Minimum required radius for connectivity with probability: {probability_of_connectivity} (n={num_sensors}, area={size}x{size}): {required_radius:.2f} m")
     return required_radius
+
+
+def optimize_randomized_gossip(W_matrices, edge_indices, n):
+    """
+    Optimizes the randomized gossip weights to minimize the second-largest eigenvalue of E[W].
+    
+    Parameters:
+    - W_matrices: list of (N x N) symmetric gossip matrices W_ij (1 per edge).
+    - edge_indices: list of tuples (i,j) corresponding to each W_ij.
+    - n: number of nodes in the graph.
+    
+    Returns:
+    - Optimal probability vector p (len = number of edges).
+    - Optimized expected matrix W_bar.
+    """
+    m = len(edge_indices)
+    p = cp.Variable(m, nonneg=True)
+
+    # Constraints: p sums to 1 (probabilities)
+    constraints = [cp.sum(p) == 1]
+
+    # Build expected matrix W_bar = sum p_ij * W_ij
+    W_bar = sum(p[k] * W_matrices[k] for k in range(m))
+
+    # Objective: minimize lambda_2(W_bar)
+    # Convert to symmetric form and use lambda_max of (W_bar - 1/n * 1 1^T)
+    I = np.eye(n)
+    J = np.ones((n, n)) / n
+    W_centered = W_bar - J
+    lambda_2 = cp.lambda_max(W_centered)
+
+    # Setup and solve problem
+    prob = cp.Problem(cp.Minimize(lambda_2), constraints)
+    prob.solve()
+
+    # Get optimized weights and W_bar
+    p_opt = p.value
+    W_bar_opt = sum(p_opt[k] * W_matrices[k] for k in range(m))
+
+    return p_opt, W_bar_opt
