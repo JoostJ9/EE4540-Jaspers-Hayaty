@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def median_consensus(adjacency, values, num_iters=100, c=1.0, verbose=False):
     """
     Median consensus via PDMM using L1-norm minimization.
@@ -17,8 +18,9 @@ def median_consensus(adjacency, values, num_iters=100, c=1.0, verbose=False):
     N = len(values)
     s = values.copy()
     x = np.zeros_like(s)
-    history = [x.copy()]
+    history = [s.copy()]
     degrees = np.sum(adjacency, axis=1)
+    real_median = np.median(s)  # Calculate the true median of the initial values
 
     if np.any(degrees == 0):
         raise ValueError("Some nodes have no neighbors; graph must be connected.")
@@ -59,7 +61,7 @@ def median_consensus(adjacency, values, num_iters=100, c=1.0, verbose=False):
         history.append(x.copy())
 
         if verbose and t % 10 == 0:
-            med_error = np.max(np.abs(x - np.median(s)))
+            med_error = np.max(np.abs(x - real_median))
             print(f"Iter {t}: max deviation from median = {med_error:.6f}")
 
-    return x, np.median(s), history
+    return x, real_median, history
