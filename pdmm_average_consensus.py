@@ -75,7 +75,7 @@ def pdmm_average_consensus(adjacency, values, num_iters=100, c=1.0, verbose=Fals
         x = x_new.copy()
         history.append(x.copy())
 
-        err = np.max(np.abs(x - real_avg))
+        err = np.linalg.norm(x - real_avg)/np.linalg.norm(real_avg)  # Calculate the normalized error from the real average
         if err < 1e-12:
             if verbose:
                 print(f"Converged at iteration {k} with max error {err:.14f}")

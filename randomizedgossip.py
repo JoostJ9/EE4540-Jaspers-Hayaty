@@ -1,4 +1,5 @@
 import numpy as np
+import cvxpy as cp
 
 def randomized_gossip_average(adjacency, values, num_iters=1000, verbose=False):
     """
@@ -17,7 +18,9 @@ def randomized_gossip_average(adjacency, values, num_iters=1000, verbose=False):
     N = len(values)
     x = values.copy()
     history = [x.copy()]
-    for it in range(num_iters):
+    transmissions = [0]  # List to keep track of transmissions per iteration
+    tx = 0  # Initialize transmission count
+    for k in range(num_iters):
         # Randomly select an edge (i, j) from the adjacency matrix
         i = np.random.randint(N)
         neighbors = np.where(adjacency[i])[0]
@@ -28,7 +31,69 @@ def randomized_gossip_average(adjacency, values, num_iters=1000, verbose=False):
         avg = 0.5 * (x[i] + x[j])
         x[i] = avg
         x[j] = avg
+        tx += 2  # Count the number of transmissions
         history.append(x.copy())
-        if verbose and it % 100 == 0:
-            print(f"Iteration {it}: mean={np.mean(x):.4f}, std={np.std(x):.4f}")
-    return history, real_avg
+        transmissions.append(tx)
+        err = np.linalg.norm(x - real_avg)/np.linalg.norm(real_avg)  # Calculate the normalized error from the real average
+        if err < 1e-12:
+            if verbose:
+                print(f"Converged at iteration {k} with max error {err:.14f}")
+            break
+        if verbose and k % 100 == 0:
+            print(f"Iter {k}: max error = {err:.10f}")
+    return k, history, real_avg, transmissions
+
+def compute_P_matrix(adjacency):
+    """
+    Computes the P matrix for the randomized gossip algorithm based on the adjacency matrix.
+    
+    Parameters:
+    - adjacency: (N, N) boolean array, adjacency matrix of the network
+    
+    Returns:
+    - P: (N, N) matrix where P[i, j] is the probability of node i communicating with node j
+    """
+    N = adjacency.shape[0]
+    Wij_list = []
+    for i in range(N):
+        for j in range(N):
+            if adjacency[i, j]:
+                e_i = np.zeros((N, 1)); e_i[i] = 1
+                e_j = np.zeros((N, 1)); e_j[j] = 1
+                W_ij = np.eye(N) - 0.5 * (e_i - e_j) @ (e_i - e_j).T
+                Wij_list.append(W_ij)
+    
+    Wij_flat = np.array([W.flatten() for W in Wij_list])
+    p = cp.Variable(len(Wij_list), nonneg=True)
+
+    W_bar_vec = p @ Wij_flat / N
+    W_bar = cp.reshape(W_bar_vec, (N, N), order='F')
+
+    # Constraints: each row sum of P (from p) must be 1
+    constraints = []
+    cnt = 0
+    for i in range(N):
+        row_expr = 0
+        for j in range(N):
+            if adjacency[i, j]:
+                row_expr += p[cnt]
+                cnt += 1
+        constraints.append(row_expr == 1)
+
+    one_vec = np.ones((N, 1))
+    W_proj = W_bar - (one_vec @ one_vec.T) / N
+
+    objective = cp.Minimize(cp.lambda_max(W_proj))
+    problem = cp.Problem(objective, constraints)
+    problem.solve(solver=cp.SCS)
+
+    # Reconstruct P matrix from p
+    P = np.zeros((N, N))
+    cnt = 0
+    for i in range(N):
+        for j in range(N):
+            if adjacency[i, j]:
+                P[i, j] = p[cnt].value
+                cnt += 1
+
+    return np.round(P, 4)

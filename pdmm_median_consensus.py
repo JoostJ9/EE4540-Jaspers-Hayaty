@@ -71,7 +71,7 @@ def median_consensus(adjacency, values, num_iters=100, c=1.0, verbose=False, Bro
         x = x_new.copy()
         history.append(x.copy())
 
-        err = np.linalg.norm(x - real_median)/np.linalg.norm(real_median)
+        err = np.linalg.norm(x - real_median)/np.linalg.norm(real_median) #Calculat the normalized error from the real median
 
         if verbose and k % 100 == 0:
             print(f"Iter {k}: max deviation from median = {err:.6f}")
