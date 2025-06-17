@@ -1,7 +1,7 @@
 import numpy as np
 import cvxpy as cp
 
-def randomized_gossip_average(adjacency, values, num_iters=1000, verbose=False):
+def randomized_gossip_average(adjacency, values, P, num_iters=1000, verbose=False, transmissions_loss = 0):
     """
     Runs the randomized gossip algorithm to compute the average of the initial values.
     
@@ -26,11 +26,19 @@ def randomized_gossip_average(adjacency, values, num_iters=1000, verbose=False):
         neighbors = np.where(adjacency[i])[0]
         if len(neighbors) == 0:
             continue  # skip isolated node
-        j = np.random.choice(neighbors)
+        j = np.random.choice(len(P[i]), p=P[i]/np.sum(P[i]))  # Choose neighbor j based on probabilities in P
         # Both nodes update to their average
         avg = 0.5 * (x[i] + x[j])
-        x[i] = avg
-        x[j] = avg
+        if transmissions_loss > 0:
+            loss1 = np.random.choice([0, 1], p=[1-transmissions_loss, transmissions_loss])
+            loss2 = np.random.choice([0, 1], p=[1-transmissions_loss, transmissions_loss])
+        else:
+            loss1 = 0
+            loss2 = 0
+        if loss1 == 0:
+            x[i] = avg
+        if loss2 == 0:
+            x[j] = avg
         tx += 2  # Count the number of transmissions
         history.append(x.copy())
         transmissions.append(tx)
