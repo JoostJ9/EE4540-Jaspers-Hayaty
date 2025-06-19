@@ -1,7 +1,7 @@
 import numpy as np
 import cvxpy as cp
 
-def randomized_gossip_average(adjacency, values, P, num_iters=1000, verbose=False, transmissions_loss = 0):
+def randomized_gossip_average(adjacency, values, P, num_iters=1000, verbose=False, transmissions_loss = 0, threshold=1e-12):
     """
     Runs the randomized gossip algorithm to compute the average of the initial values.
     
@@ -43,7 +43,7 @@ def randomized_gossip_average(adjacency, values, P, num_iters=1000, verbose=Fals
         history.append(x.copy())
         transmissions.append(tx)
         err = np.linalg.norm(x - real_avg)/np.linalg.norm(real_avg)  # Calculate the normalized error from the real average
-        if err < 1e-12:
+        if err < threshold:
             if verbose:
                 print(f"Converged at iteration {k} with max error {err:.14f}")
             break
@@ -105,3 +105,27 @@ def compute_P_matrix(adjacency):
                 cnt += 1
 
     return np.round(P, 4)
+
+def calculate_W_bar(P, adjacency):
+    """
+    Calculate the W_bar matrix based on the P matrix and adjacency matrix.
+    
+    Parameters:
+        P: (N, N) matrix, probability matrix for gossip communication
+        adjacency: (N, N) boolean array, adjacency matrix of the network
+    
+    Returns:
+        W_bar: (N, N) matrix, average gossip weight matrix
+    """
+    N = adjacency.shape[0]
+    W_bar = np.zeros_like(adjacency, dtype='float64')
+
+    for i in range(N):
+        for j in range(N):
+            if adjacency[i, j]:
+                e_i = np.zeros((N, 1)); e_i[i] = 1
+                e_j = np.zeros((N, 1)); e_j[j] = 1
+                W_ij = np.eye(N) - 0.5 * (e_i - e_j) @ (e_i - e_j).T
+                W_bar += P[i, j] * W_ij
+    
+    return W_bar / N
