@@ -26,10 +26,6 @@ This notebook contains an implementation of the **PDMM Median Consensus** algori
 - All core algorithms are implemented in separate Python files named accordingly (e.g., `pdmm_average.py`, `randomized_gossip.py`, etc.).
 - Utility functions (e.g., plotting, initialization, data saving) are defined in `helper.py` to improve notebook readability and modularity.
 
-## Folder Structure
-
-<pre> ├── Assignment1_SensorField.ipynb ├── Assignment2_AvgConsensus.ipynb ├── Assignment3_MedianConsensus.ipynb ├── helper.py ├── pdmm_average.py ├── randomized_gossip.py ├── median_consensus.py ├── animations/ │ ├── gossip_convergence.gif │ ├── pdmm_convergence.gif </pre>
-
 ## Run Instructions
 
 Each notebook can be run independently. Ensure all dependencies are installed and that the working directory includes the required `.py` files.
