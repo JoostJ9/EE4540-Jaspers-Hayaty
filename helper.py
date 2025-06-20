@@ -1,5 +1,10 @@
+"""
+This helper module provides different functions used in EE4540.ipynb.
+"""
+
 import numpy as np
 from matplotlib import pyplot as plt
+import cvxpy as cp
 
 def generate_random_geometric_graph(num_sensor, radius, AREA_WIDTH):
     """
@@ -13,15 +18,22 @@ def generate_random_geometric_graph(num_sensor, radius, AREA_WIDTH):
     Returns:
     - A tuple containing the positions of the sensors and the adjacency matrix of the graph.
     """
-    positions = np.random.rand(num_sensor, 2) * AREA_WIDTH
+
+    np.random.seed(0)
+    #positions = np.random.rand(num_sensor, 2) * AREA_WIDTH
+    positions = np.array([np.random.uniform(0, AREA_WIDTH, num_sensor),
+                            np.random.uniform(0, AREA_WIDTH, num_sensor)])
     adjacency_matrix = np.zeros((num_sensor, num_sensor), dtype=int)
 
     for i in range(num_sensor):
-        for j in range(i + 1, num_sensor):
-            distance = np.linalg.norm(positions[i] - positions[j])
+        for j in range(num_sensor):
+            if i == j:
+                continue
+            distance = np.linalg.norm(positions[:,i] - positions[:,j])
             if distance <= radius:
                 adjacency_matrix[i, j] = 1
-                adjacency_matrix[j, i] = 1
+
+    positions = positions.T
 
     return positions, adjacency_matrix
 
@@ -73,5 +85,13 @@ def min_radius_for_sensors(num_sensors, dimension, size=1):
     """
     unit_cube_radius = np.power(2 * np.log(num_sensors) / num_sensors, 1 / dimension)
     required_radius = unit_cube_radius * size
-    print(f"Minimum required radius for connectivity with high probability (n={num_sensors}, area={size}x{size}): {required_radius:.2f} m")
+    probability_of_connectivity = (1 - 1 / num_sensors**2) * 100  # Simplified probability of connectivity
+    print(f"Minimum required radius for connectivity with probability: {probability_of_connectivity} (n={num_sensors}, area={size}x{size}): {required_radius:.2f} m")
     return required_radius
+
+
+def graph_is_connected(adjacency):
+    degree = np.diag(np.sum(adjacency, axis=1))
+    laplacian = degree - adjacency
+    eigenvalues = np.linalg.eigvals(laplacian)
+    return np.count_nonzero(eigenvalues < 1e-10) == 1
