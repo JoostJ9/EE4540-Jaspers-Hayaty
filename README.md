@@ -23,7 +23,7 @@ This notebook contains an implementation of the **PDMM Median Consensus** algori
 
 ## Codebase Notes
 
-- All core algorithms are implemented in separate Python files named accordingly (e.g., `pdmm_average.py`, `randomized_gossip.py`, etc.).
+- All core algorithms are implemented in separate Python files named accordingly (e.g., `pdmm_average_consensus.py`, `randomizedgossip.py`, etc.).
 - Utility functions (e.g., plotting, initialization, data saving) are defined in `helper.py` to improve notebook readability and modularity.
 
 ## Run Instructions
